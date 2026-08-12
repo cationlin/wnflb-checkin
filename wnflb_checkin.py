@@ -19,8 +19,10 @@
   FORUM_PASSWORD   密码
   FORUM_COOKIE     直接传入的 Cookie 字符串（优先级高于 cookie 文件）
   COOKIE_FILE      Cookie 缓存文件路径（默认 cookies.json）
-  PUSHPLUS_TOKEN   PushPlus 推送 token
-  SERVERCHAN_KEY   Server 酱推送 key
+  FORUM_QUESTION_ID     安全提问编号（0=无，1-7）
+  FORUM_QUESTION_ANSWER 安全提问答案
+  PUSHPLUS_TOKEN        PushPlus 推送 token
+  SERVERCHAN_KEY        Server 酱推送 key
 """
 
 import argparse
@@ -329,7 +331,8 @@ def verify_captcha_code(session, cap, code):
 
 
 def _submit_login(session, formhash, loginhash, username="", password="",
-                  seccode="", auth="", seccodehash="", challenge=False):
+                  seccode="", auth="", seccodehash="", challenge=False,
+                  questionid="0", answer=""):
     """
     执行一次登录 POST。返回 (ok, msg, resp_html)。
 
@@ -346,8 +349,8 @@ def _submit_login(session, formhash, loginhash, username="", password="",
             "formhash": formhash,
             "referer": BASE_URL + "/",
             "auth": auth,
-            "questionid": "0",
-            "answer": "",
+            "questionid": questionid,
+            "answer": answer,
             "seccodehash": seccodehash or "",
             "seccodemodid": "member::logging",
             "seccodeverify": seccode,
@@ -361,6 +364,8 @@ def _submit_login(session, formhash, loginhash, username="", password="",
             "password": password,
             "questionid": "0",
             "answer": "",
+            "questionid": questionid,
+            "answer": answer,
             "cookietime": "2592000",
         }
         if seccode:
@@ -407,7 +412,7 @@ def _submit_login(session, formhash, loginhash, username="", password="",
     return False, (msg or "登录失败（未进入登录态）"), txt
 
 
-def do_login(session, username, password):
+def do_login(session, username, password, questionid="0", answer=""):
     """
     账号密码登录（含新 IP 二次验证码挑战）。
     成功返回 (True, 消息)，失败返回 (False, 消息)。
@@ -419,7 +424,8 @@ def do_login(session, username, password):
 
     # 首次尝试：无验证码直接提交（老 IP / 已信任环境通常直接成功）
     ok, msg, resp_html = _submit_login(
-        session, formhash, loginhash, username, password, None, None
+        session, formhash, loginhash, username, password, None, None,
+        questionid=questionid, answer=answer
     )
     if ok:
         return True, msg
@@ -484,6 +490,7 @@ def do_login(session, username, password):
         ok2, last_msg, _ = _submit_login(
             session, c_fh, c_lh, username, password, code, auth,
             cap["seccodehash"], challenge=True,
+            questionid=questionid, answer=answer,
         )
         if ok2:
             return True, (last_msg or "登录成功(已通过验证码)")
@@ -630,6 +637,10 @@ def main():
                         help="直接传入 Cookie 字符串")
     parser.add_argument("--cookie-file", default=os.environ.get("COOKIE_FILE", "cookies.json"),
                         help="Cookie 缓存文件路径（默认 cookies.json）")
+    parser.add_argument("--question-id", default=os.environ.get("FORUM_QUESTION_ID", "0"),
+                        help="安全提问编号（0=无，1-7）")
+    parser.add_argument("--question-answer", default=os.environ.get("FORUM_QUESTION_ANSWER", ""),
+                        help="安全提问答案")
     parser.add_argument("--no-save", action="store_true", help="不保存 Cookie")
     parser.add_argument("--mode", default="checkin", help="签到模式标签(checkin/recheck)")
     parser.add_argument("--inspect", action="store_true",
@@ -670,7 +681,7 @@ def main():
             send_notification("[签到失败] 需登录", f"时间:{now}\n错误:{msg}")
             sys.exit(1)
         print("[2] 使用账号密码登录 ...")
-        ok, msg = do_login(session, args.username, args.password)
+        ok, msg = do_login(session, args.username, args.password, args.question_id, args.question_answer)
         if not ok:
             print(f"[FAIL] 登录失败: {msg}")
             send_notification("[签到失败] 登录失败", f"时间:{now}\n错误:{msg}")
