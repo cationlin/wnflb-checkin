@@ -15,10 +15,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: keepalive
+        continue-on-error: true
       - name: Keepalive commit
         run: |
           git config user.name github-actions[bot]
           git config user.email github-actions[bot]@users.noreply.github.com
+          git checkout -B keepalive
           git commit --allow-empty -m keepalive_$(date -u)
-          git push origin main
+          git push origin keepalive
