@@ -14,10 +14,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: main
       - name: Keepalive commit
         run: |
-          echo keepalive $(date -u) > .keepalive
           git config user.name github-actions[bot]
           git config user.email github-actions[bot]@users.noreply.github.com
+          echo keepalive $(date -u) > .keepalive
           git add .keepalive
-          git commit -m keepalive_$(date -u) && git pull --rebase && git push || echo skip
+          git commit -m keepalive_$(date -u) || echo nothing
+          git push origin main
