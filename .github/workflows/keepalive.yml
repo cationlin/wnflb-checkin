@@ -14,13 +14,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: keepalive
-        continue-on-error: true
       - name: Keepalive commit
         run: |
           git config user.name github-actions[bot]
           git config user.email github-actions[bot]@users.noreply.github.com
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/cationlin/wnflb-checkin.git
           git checkout -B keepalive
           git commit --allow-empty -m keepalive_$(date -u)
           git push origin keepalive
