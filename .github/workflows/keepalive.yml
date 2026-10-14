@@ -20,5 +20,5 @@ jobs:
           git config user.email github-actions[bot]@users.noreply.github.com
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/cationlin/wnflb-checkin.git
           git checkout -B keepalive
-          git commit --allow-empty -m keepalive_$(date -u)
+          git commit --allow-empty -m keepalive_$(date -u +%Y%m%dT%H%M%SZ)
           git push origin keepalive
